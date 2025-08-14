@@ -173,3 +173,6 @@ yarn-error.log*
 next-env.d.ts
 
 prisma/generated
+
+# Claude context files
+claudecontext/

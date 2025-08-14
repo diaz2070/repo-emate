@@ -1,12 +1,12 @@
 model User {
   id               String    @id
   name             String
-  email            String
+  email            String    @unique
   emailVerified    Boolean
   image            String?
   createdAt        DateTime
   updatedAt        DateTime
-  username         String?
+  username         String?   @unique
   displayUsername  String?
   role             String?
   banned           Boolean?
@@ -14,27 +14,25 @@ model User {
   banExpires       DateTime?
   active           Boolean?
   registrationDate DateTime?
-  sessions         Session[]
   accounts         Account[]
+  sessions         Session[]
+  documents        Document[]
 
-  @@unique([email])
-  @@unique([username])
   @@map("user")
 }
 
 model Session {
   id             String   @id
   expiresAt      DateTime
-  token          String
+  token          String   @unique
   createdAt      DateTime
   updatedAt      DateTime
   ipAddress      String?
   userAgent      String?
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   impersonatedBy String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
@@ -43,7 +41,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -53,6 +50,7 @@ model Account {
   password              String?
   createdAt             DateTime
   updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }

@@ -1,0 +1,25 @@
+model DocumentType {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  documents   Document[]
+
+  @@map("document_type")
+}
+
+model Document {
+  id             String      @id @default(cuid())
+  title          String
+  description    String?
+  filePath       String?
+  documentTypeId String
+  documentType   DocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+
+  @@map("document")
+}

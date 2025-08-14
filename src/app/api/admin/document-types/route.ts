@@ -18,16 +18,56 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos' }, { status: 403 });
     }
 
-    // Get all document types with document counts
+    // Get pagination parameters from URL
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '5', 10);
+    const search = searchParams.get('search') || '';
+    const sortBy = searchParams.get('sortBy') || 'name';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Build where clause for search
+    const whereClause = search ? {
+      OR: [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive' as const
+          }
+        },
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive' as const
+          }
+        }
+      ]
+    } : {};
+
+    // Build orderBy clause
+    const orderByClause = sortBy === 'documentCount' 
+      ? { documents: { _count: sortOrder } }
+      : { [sortBy]: sortOrder };
+
+    // Get total count for pagination
+    const totalCount = await prisma.documentType.count({
+      where: whereClause
+    });
+
+    // Get document types with pagination
     const documentTypes = await prisma.documentType.findMany({
+      where: whereClause,
       include: {
         _count: {
           select: { documents: true }
         }
       },
-      orderBy: {
-        name: 'asc'
-      }
+      orderBy: orderByClause,
+      skip: offset,
+      take: limit
     });
 
     const formattedTypes = documentTypes.map(type => ({
@@ -39,9 +79,18 @@ export async function GET(request: NextRequest) {
       updatedAt: type.updatedAt
     }));
 
+    const totalPages = Math.ceil(totalCount / limit);
+
     return NextResponse.json({
       documentTypes: formattedTypes,
-      total: formattedTypes.length
+      pagination: {
+        total: totalCount,
+        page: page,
+        limit: limit,
+        totalPages: totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
     });
   } catch (error) {
     console.error('Error fetching document types:', error);

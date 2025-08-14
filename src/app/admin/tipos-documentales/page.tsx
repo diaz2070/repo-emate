@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, FileText, Calendar, Edit, Trash2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import CreateDocumentTypeForm from '@/components/admin/CreateDocumentTypeForm';
 
 interface DocumentType {
   id: string;
@@ -18,9 +19,18 @@ interface DocumentType {
   updatedAt: string;
 }
 
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 interface DocumentTypesResponse {
   documentTypes: DocumentType[];
-  total: number;
+  pagination: Pagination;
 }
 
 export default function TiposDocumentalesPage() {
@@ -29,55 +39,46 @@ export default function TiposDocumentalesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'documentCount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [total, setTotal] = useState(0);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    page: 1,
+    limit: 5,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
   const fetchDocumentTypes = async () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/admin/document-types');
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+        search: searchTerm,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      });
+      
+      const response = await fetch(`/api/admin/document-types?${params}`);
       if (!response.ok) {
         toast.error('Error al cargar tipos documentales');
         return;
       }
       
       const data: DocumentTypesResponse = await response.json();
-      if (data.documentTypes) {
-        let fetchedTypes = data.documentTypes;
-        console.log('Fetched document types:', fetchedTypes);
+      if (data.documentTypes && data.pagination) {
+        console.log('Fetched document types:', data.documentTypes);
+        console.log('Pagination info:', data.pagination);
         
-        // Client-side filtering
-        if (searchTerm) {
-          fetchedTypes = fetchedTypes.filter((type: DocumentType) =>
-            type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (type.description?.toLowerCase().includes(searchTerm.toLowerCase()))
-          );
-        }
+        setDocumentTypes(data.documentTypes);
+        setPagination(data.pagination);
         
-        // Client-side sorting
-        fetchedTypes.sort((a: DocumentType, b: DocumentType) => {
-          let aValue, bValue;
-          if (sortBy === 'createdAt') {
-            aValue = new Date(a.createdAt).getTime();
-            bValue = new Date(b.createdAt).getTime();
-          } else if (sortBy === 'documentCount') {
-            aValue = a.documentCount;
-            bValue = b.documentCount;
-          } else {
-            aValue = a.name.toLowerCase();
-            bValue = b.name.toLowerCase();
-          }
-          
-          if (sortOrder === 'asc') {
-            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-          } else {
-            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-          }
-        });
-        
-        setDocumentTypes(fetchedTypes);
-        setTotal(fetchedTypes.length);
+        // Reset selections when data changes
+        setSelectedTypes([]);
       }
     } catch (error) {
       console.error('Error fetching document types:', error);
@@ -87,9 +88,16 @@ export default function TiposDocumentalesPage() {
     }
   };
 
+  // Reset to page 1 when search or sort changes
+  useEffect(() => {
+    if (pagination.page !== 1) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [searchTerm, sortBy, sortOrder]);
+
   useEffect(() => {
     fetchDocumentTypes();
-  }, [searchTerm, sortBy, sortOrder]);
+  }, [pagination.page, searchTerm, sortBy, sortOrder]);
 
   const handleSelectAll = () => {
     if (selectedTypes.length === documentTypes.length) {
@@ -131,6 +139,23 @@ export default function TiposDocumentalesPage() {
     }
   };
 
+  const handleDocumentTypeCreated = () => {
+    setShowCreateForm(false);
+    fetchDocumentTypes();
+  };
+
+  const handleNextPage = () => {
+    if (pagination.hasNext) {
+      setPagination(prev => ({ ...prev, page: prev.page + 1 }));
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination.hasPrev) {
+      setPagination(prev => ({ ...prev, page: prev.page - 1 }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -154,9 +179,12 @@ export default function TiposDocumentalesPage() {
             Gestiona los tipos documentales del sistema
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setShowCreateForm(true)}
+        >
           <Plus className="w-4 h-4" />
-          Crear documental
+          Nuevo tipo documental
         </Button>
       </div>
 
@@ -312,14 +340,29 @@ export default function TiposDocumentalesPage() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedTypes.length > 0 
                     ? `${selectedTypes.length} de ${documentTypes.length} filas seleccionadas`
-                    : `${total} tipos documentales encontrados`
+                    : `Mostrando ${(pagination.page - 1) * pagination.limit + 1}-${Math.min(pagination.page * pagination.limit, pagination.total)} de ${pagination.total} tipos documentales`
                   }
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" disabled>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Página {pagination.page} de {pagination.totalPages}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={!pagination.hasPrev || loading}
+                    onClick={handlePrevPage}
+                    className="transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 disabled:hover:bg-transparent disabled:hover:text-current"
+                  >
                     Anterior
                   </Button>
-                  <Button variant="ghost" size="sm" disabled>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={!pagination.hasNext || loading}
+                    onClick={handleNextPage}
+                    className="transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 disabled:hover:bg-transparent disabled:hover:text-current"
+                  >
                     Siguiente
                   </Button>
                 </div>
@@ -328,6 +371,13 @@ export default function TiposDocumentalesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Document Type Form */}
+      <CreateDocumentTypeForm
+        open={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        onDocumentTypeCreated={handleDocumentTypeCreated}
+      />
     </div>
   );
 }

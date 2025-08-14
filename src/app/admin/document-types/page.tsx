@@ -233,11 +233,7 @@ export default function TiposDocumentalesPage() {
       <Button
         variant="ghost"
         size="sm"
-        className={`h-8 w-8 p-0 transition-all duration-200 hover:scale-105 ${
-          item.documentCount > 0 
-            ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20' 
-            : 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
-        }`}
+        className="h-8 w-8 p-0 transition-all duration-200 hover:scale-105 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
         title={item.documentCount > 0 ? "No se puede eliminar: tipo en uso" : "Eliminar"}
         onClick={() => handleDeleteClick(item)}
       >

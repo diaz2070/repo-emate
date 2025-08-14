@@ -10,6 +10,7 @@ function ButtonNavigation() {
     { href: '/', name: 'Inicio' },
     { href: '/admin', name: 'Admin' },
     { href: '/admin/usuarios', name: 'Usuarios' },
+    { href: '/admin/document-types', name: 'Documentales' },
   ];
 
   return (

@@ -181,7 +181,7 @@ export default function AdminDashboard() {
               Gestiona los tipos documentales del sistema
             </p>
             <div className="flex gap-2">
-              <Link href="/admin/tipos-documentales">
+              <Link href="/admin/document-types">
                 <Button className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Ver Tipos

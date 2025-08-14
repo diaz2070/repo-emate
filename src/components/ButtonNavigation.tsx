@@ -8,7 +8,8 @@ function ButtonNavigation() {
   const isActive = (href: string) => pathname === href;
   const links = [
     { href: '/', name: 'Inicio' },
-    { href: '/usuarios', name: 'Usuarios' },
+    { href: '/admin', name: 'Admin' },
+    { href: '/admin/usuarios', name: 'Usuarios' },
   ];
 
   return (

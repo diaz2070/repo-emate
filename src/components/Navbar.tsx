@@ -22,7 +22,6 @@ export default function Navbar({
 
   // Call client side sign out function
   async function signOut() {
-    console.log('Cerrando sesión');
     startTransition(async () => {
       await authClient.signOut({
         fetchOptions: {

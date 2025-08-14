@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."user" ADD COLUMN     "active" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "registrationDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

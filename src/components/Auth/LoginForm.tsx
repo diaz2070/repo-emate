@@ -20,11 +20,10 @@ import { toast } from 'sonner';
 export default function LoginForm() {
   const [isPending, startTransition] = useTransition();
   const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [password, setPassword] = React.useState(''); 
   const router = useRouter();
 
   async function signInUsername(username: string, password: string) {
-    console.log('Iniciando sesión con nombre de usuario:', username);
     startTransition(async () => {
       await authClient.signIn.username(
         {
@@ -33,8 +32,8 @@ export default function LoginForm() {
         },
         {
           onSuccess: () => {
-            router.replace('/');
             toast.success('Inicio de sesión exitoso');
+            router.replace('/');
           },
           onError: (error) => {
             toast.error('Error al iniciar sesión');

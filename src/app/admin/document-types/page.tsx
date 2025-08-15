@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import CreateDocumentTypeForm from '@/components/admin/CreateDocumentTypeForm';
+import EditDocumentTypeForm from '@/components/admin/EditDocumentTypeForm';
 import DataTable, { Column, Pagination } from '@/components/ui/DataTable';
 import DeleteDialog from '@/components/ui/DeleteDialog';
 
@@ -31,6 +32,8 @@ export default function TiposDocumentalesPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<DocumentType | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DocumentType | null>(null);
   const [pagination, setPagination] = useState<Pagination>({
@@ -106,8 +109,6 @@ export default function TiposDocumentalesPage() {
       
       const data: DocumentTypesResponse = await response.json();
       if (data.documentTypes && data.pagination) {
-        console.log('Fetched document types:', data.documentTypes);
-        console.log('Pagination info:', data.pagination);
         
         setDocumentTypes(data.documentTypes);
         setPagination(data.pagination);
@@ -190,6 +191,26 @@ export default function TiposDocumentalesPage() {
     setItemToDelete(null);
   };
 
+  const handleEditClick = (item: DocumentType) => {
+    if (!item.id || item.id.trim() === '') {
+      toast.error('Error: ID del tipo documental no válido. Intenta refrescar la página.');
+      return;
+    }
+    setItemToEdit(item);
+    setShowEditForm(true);
+  };
+
+  const handleEditCancel = () => {
+    setShowEditForm(false);
+    setItemToEdit(null);
+  };
+
+  const handleDocumentTypeUpdated = () => {
+    setShowEditForm(false);
+    setItemToEdit(null);
+    fetchDocumentTypes();
+  };
+
   const handleDocumentTypeCreated = () => {
     setShowCreateForm(false);
     fetchDocumentTypes();
@@ -227,6 +248,7 @@ export default function TiposDocumentalesPage() {
         size="sm"
         className="h-8 w-8 p-0 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
         title="Editar"
+        onClick={() => handleEditClick(item)}
       >
         <Edit className="h-4 w-4 transition-transform duration-200" />
       </Button>
@@ -293,6 +315,14 @@ export default function TiposDocumentalesPage() {
         open={showCreateForm}
         onClose={() => setShowCreateForm(false)}
         onDocumentTypeCreated={handleDocumentTypeCreated}
+      />
+
+      {/* Edit Document Type Form */}
+      <EditDocumentTypeForm
+        open={showEditForm}
+        onClose={handleEditCancel}
+        onDocumentTypeUpdated={handleDocumentTypeUpdated}
+        documentType={itemToEdit}
       />
 
       {/* Delete Confirmation Dialog */}

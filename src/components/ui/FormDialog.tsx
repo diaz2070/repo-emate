@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -41,13 +41,12 @@ export default function FormDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          {description && (
+            <DialogDescription>
+              {description}
+            </DialogDescription>
+          )}
         </DialogHeader>
-        
-        {description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {description}
-          </p>
-        )}
         
         <form onSubmit={onSubmit} className="space-y-4">
           {children}

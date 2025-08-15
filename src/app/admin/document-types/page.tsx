@@ -7,6 +7,7 @@ import { Plus, FileText, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import CreateDocumentTypeForm from '@/components/admin/CreateDocumentTypeForm';
 import DataTable, { Column, Pagination } from '@/components/ui/DataTable';
+import DeleteDialog from '@/components/ui/DeleteDialog';
 
 interface DocumentType {
   id: string;
@@ -30,6 +31,8 @@ export default function TiposDocumentalesPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<DocumentType | null>(null);
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
@@ -147,13 +150,21 @@ export default function TiposDocumentalesPage() {
     );
   };
 
-  const handleDeleteType = async (typeId: string, typeName: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el tipo documental "${typeName}"?`)) {
+  const handleDeleteClick = (item: DocumentType) => {
+    if (item.documentCount > 0) {
+      toast.error(`No se puede eliminar: este tipo está en uso por ${item.documentCount} ${item.documentCount === 1 ? 'documento' : 'documentos'}`);
       return;
     }
+    
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/document-types/${typeId}`, {
+      const response = await fetch(`/api/admin/document-types/${itemToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -165,10 +176,18 @@ export default function TiposDocumentalesPage() {
 
       toast.success('Tipo documental eliminado exitosamente');
       fetchDocumentTypes();
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
     } catch (error) {
       console.error('Error deleting document type:', error);
       toast.error('Error al eliminar tipo documental');
+      throw error;
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+    setItemToDelete(null);
   };
 
   const handleDocumentTypeCreated = () => {
@@ -206,20 +225,19 @@ export default function TiposDocumentalesPage() {
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0"
+        className="h-8 w-8 p-0 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
         title="Editar"
       >
-        <Edit className="h-4 w-4" />
+        <Edit className="h-4 w-4 transition-transform duration-200" />
       </Button>
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-        title="Eliminar"
-        onClick={() => handleDeleteType(item.id, item.name)}
-        disabled={item.documentCount > 0}
+        className="h-8 w-8 p-0 transition-all duration-200 hover:scale-105 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+        title={item.documentCount > 0 ? "No se puede eliminar: tipo en uso" : "Eliminar"}
+        onClick={() => handleDeleteClick(item)}
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-4 w-4 transition-transform duration-200" />
       </Button>
     </div>
   );
@@ -275,6 +293,20 @@ export default function TiposDocumentalesPage() {
         open={showCreateForm}
         onClose={() => setShowCreateForm(false)}
         onDocumentTypeCreated={handleDocumentTypeCreated}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Eliminar Tipo Documental"
+        itemName={itemToDelete?.name}
+        disabled={itemToDelete ? itemToDelete.documentCount > 0 : false}
+        disabledReason={itemToDelete && itemToDelete.documentCount > 0 
+          ? `Este tipo está en uso por ${itemToDelete.documentCount} ${itemToDelete.documentCount === 1 ? 'documento' : 'documentos'} y no puede ser eliminado.`
+          : undefined
+        }
       />
     </div>
   );

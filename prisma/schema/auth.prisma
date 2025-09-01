@@ -17,6 +17,7 @@ model User {
   accounts         Account[]
   sessions         Session[]
   documents        Document[]
+  folders          Folder[]
 
   @@map("user")
 }

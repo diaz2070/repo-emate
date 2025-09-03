@@ -1,6 +1,9 @@
-import { adminClient, usernameClient } from 'better-auth/client/plugins';
-import { admin } from 'better-auth/plugins';
+import { inferAdditionalFields, usernameClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
+import { nextCookies } from 'better-auth/next-js';
+
+import { auth } from './auth';
+
 export const authClient = createAuthClient({
-  plugins: [usernameClient(), adminClient({})],
+  plugins: [inferAdditionalFields<typeof auth>(), usernameClient(), nextCookies()],
 });
